@@ -269,12 +269,13 @@ function showUser(userID) {
 		success: function(data) {
 			var name = data.user.summary;
 			var title = data.user.job_title;
-			var htmlStr = '';
+			var htmlstr = '';
 			if ( data.user.avatar_url ) {
-				htmlStr += '<img src="' + data.user.avatar_url + '"><br>';
+				htmlstr += '<img src="' + data.user.avatar_url + '"><br>';
 			}
-			htmlStr += "<h2>" + name + "</h2>";
-			if ( title ) { htmlStr += "<h4>" + title + "</h4>"; }
+			htmlstr += "<h2>" + name + "</h2>";
+			if ( title ) { htmlstr += "<h4>" + title + "</h4>"; }
+			htmlstr += "<p><b>High-urgency notification rules:</b></p>"
 			data.user.notification_rules.forEach(function(rule) {
 				if (rule.urgency === "high") {
 					var address = rule.contact_method.address;
@@ -287,10 +288,27 @@ function showUser(userID) {
 					} else if ( rule.contact_method.type == "push_notification_contact_method" ) {
 						address = rule.contact_method.summary;
 					}
-					htmlStr += contactMethodTypes[rule.contact_method.type] + ": " + address + "<br>";
+					htmlstr += "After " + rule.start_delay_in_minutes + " minutes: " + contactMethodTypes[rule.contact_method.type] + ": " + address + "<br>";
 				}
 			});
-			$('#contact').html(htmlStr);
+			
+			htmlstr += "<p> </p><p><b>All contact methods:</b></p>"
+
+			data.user.contact_methods.forEach(function(method) {
+				var address = method.address;
+				if ( method.type == "phone_contact_method" || method.type == "sms_contact_method") {
+					address = libphonenumber.format("+" + method.country_code + address, "US", "International");
+					var scheme = method.type == "phone_contact_method" ? 'tel:' : 'sms:';
+					address = '<a href="' + scheme + address + '">' + address + '</a>';
+				} else if ( method.type == "email_contact_method" ) {
+					address = '<a href="mailto:' + address + '">' + address + '</a>';
+				} else if ( method.type == "push_notification_contact_method" ) {
+					address = method.summary;
+				}
+				htmlstr += contactMethodTypes[method.type] + ": " + address + "<br>";
+			});
+
+			$('#contact').html(htmlstr);
 		}
 	}
 	
