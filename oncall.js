@@ -65,20 +65,14 @@ function populateServiceSelect(offset) {
 		}
 	}
 	if ( offset ) {
-		console.log("offset " + offset);
 		options['data'] = {
 			'offset': offset
 		};
 	} else {
-		console.log("first call");
 		$('#service-select').html('');
 	}
 
 	PDRequest(token, "/services", "GET", options);
-}
-
-function processServices(data) {
-	
 }
 
 function populateEPDetails() {
@@ -97,7 +91,7 @@ function populateEPDetails() {
 			
 			
 			htmlstr += '<div class="escalation-policy-layer escalation-policy-layer-trigger">';
-			htmlstr += '<div class="escalation-policy-circle">!</div>';
+			htmlstr += '<div class="escalation-policy-circle"><i class="fa fa-warning" aria-hidden="true"></i></div>';
 			htmlstr += '<div class="escalation-policy-layer-content">';
 			htmlstr += '<p>Immediately after an incident is triggered:</p>';
 			htmlstr += '</div></div></div>';
@@ -107,13 +101,12 @@ function populateEPDetails() {
 			var ruleNum = 0;
 			data.escalation_policy.escalation_rules.forEach(function(rule) {
 				ruleNum++;
-				console.log("Rule " + rule.id);
 				htmlstr += '<div class="escalation-rule-container">';
 				
 				htmlstr += '<div class="escalation-policy-layer">';
 				htmlstr += '<div class="escalation-policy-circle">' + ruleNum + '</div>';
 				htmlstr += '<div class="escalation-policy-layer-content">';
-				htmlstr += '<p>Notify:</p>';
+				htmlstr += '<p><i class="fa fa-bell" aria-hidden="true"></i> Notify:</p>';
 				htmlstr += '<ul class="escalation-recipient-list">';
 				
 				var oncallLookup = {};
@@ -125,7 +118,6 @@ function populateEPDetails() {
 					})
 				}
 				rule.targets.forEach(function(target) {
-					console.log("  Target " + target.id + ": " + target.summary);
 					htmlstr += '<li>';
 					if ( target.type == "schedule_reference" && oncallLookup[target.id] ) {
 						htmlstr += '<div class="escalation-recipient ' + target.type + '" id="' + target.id + '" userid="' + oncallLookup[target.id].user.id + '">' + 
@@ -146,7 +138,7 @@ function populateEPDetails() {
 				htmlstr += '</div>'; // escalation-policy-layer-content
 
 				htmlstr += '<div class="escalation-delay-in-minutes escalation-policy-layer-timeout">';
-				htmlstr += '<p>Escalates after <b>' + rule.escalation_delay_in_minutes + ' minutes</b></p>';
+				htmlstr += '<p><i class="fa fa-arrow-down" aria-hidden="true"></i> Escalates after <b>' + rule.escalation_delay_in_minutes + ' minutes</b></p>';
 				htmlstr += '</div>';
 
 				htmlstr += '</div>'; // escalation-policy-layer
@@ -156,7 +148,7 @@ function populateEPDetails() {
 
 
 			htmlstr += '<div class="escalation-policy-layer show-repeats">';
-			htmlstr += '<div class="escalation-policy-circle">*</div>';
+			htmlstr += '<div class="escalation-policy-circle"><i class="fa fa-recycle" aria-hidden="true"></i></div>';
 			htmlstr += '<div class="escalation-policy-layer-content">';
 			htmlstr += '<p>Repeat <b>' + data.escalation_policy.num_loops + '</b> times if no one acknowledges</p>';
 			htmlstr += '</div>';
@@ -180,7 +172,6 @@ function findAnyUser() {
 	var options = {
 		success: function(data) {
 			anyUserID = data.users[0].id;
-			console.log("user id " + anyUserID);
 		}
 	}
 	PDRequest(token, "/users", "GET", options);
@@ -192,7 +183,6 @@ function getCalendarFeedURL(calendarID) {
 			"requester_id": anyUserID
 		},
 		success: function(data) {
-			console.log("web cal url: " + data.schedule.http_cal_url);
 			showCalendar(data.schedule.http_cal_url);
 		}
 	}
@@ -259,13 +249,11 @@ function showCalendar(url) {
 }
 
 function showUserFromEmail(email) {
-	console.log(email);
 	var options = {
 		data: {
 			"query": email
 		},
 		success: function(data) {
-			console.log("user id is " + data.users[0].id);
 			showUser(data.users[0].id);
 		}
 	};
@@ -285,7 +273,8 @@ function showUser(userID) {
 			if ( data.user.avatar_url ) {
 				htmlStr += '<img src="' + data.user.avatar_url + '"><br>';
 			}
-			htmlStr += "<h2>" + name + "</h2><h4>" + title + "</h4>"
+			htmlStr += "<h2>" + name + "</h2>";
+			if ( title ) { htmlStr += "<h4>" + title + "</h4>"; }
 			data.user.notification_rules.forEach(function(rule) {
 				if (rule.urgency === "high") {
 					var address = rule.contact_method.address;
@@ -310,10 +299,8 @@ function showUser(userID) {
 
 function clickedEP(element) {
 	if ( element.hasClass('user_reference')) {
-		console.log("User " + element.attr('id'));
 		showUser(element.attr('id'))
 	} else if ( element.hasClass('schedule_reference')) {
-		console.log("Schedule " + element.attr('id'));
 		getCalendarFeedURL(element.attr('id'));
 		if ( element.attr('userid') ) {
 			showUser(element.attr('userid'));
