@@ -83,6 +83,7 @@ function processServices(data) {
 
 function populateEPDetails() {
 	$('#ep').html('');
+	var serviceName = $('#service-select option:selected').text();
 	var htmlstr = '';
 	var options = {
 		data: {
@@ -90,7 +91,7 @@ function populateEPDetails() {
 		},
 		success: function(data) {
 			htmlstr += '<div class="escalation-policy-container pd-item">';
-			htmlstr += '<div class="pd-item-header"><h2 class="escalation-policy-name">' + data.escalation_policy.summary + '</h2></div>';
+			htmlstr += '<div class="pd-item-header"><h2 class="escalation-policy-name">Service: ' + serviceName + '</h2><h4>Escalation Policy: ' + data.escalation_policy.summary + '</h4></div>';
 			htmlstr += '<div class="pd-escalation-policy pd-escalation-policy-padded">';
 			htmlstr += '<div class="escalation-rules">';
 			
