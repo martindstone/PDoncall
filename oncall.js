@@ -217,7 +217,7 @@ function showCalendar(url) {
 			var comp = new ICAL.Component(jcalData);
 			
 			var calName = comp.getFirstProperty("x-wr-calname").getFirstValue();
-			$('#cal-title').html('<h1 style="background-color: #f0f0f0">' + calName + '</h1><br>');
+			$('#cal-title').html('<h2>' + calName + '</h2><br>');
 			
 			var vevents = comp.getAllSubcomponents("vevent");
 			var events = [];
@@ -284,7 +284,7 @@ function showUser(userID) {
 			if ( data.user.avatar_url ) {
 				htmlStr += '<img src="' + data.user.avatar_url + '"><br>';
 			}
-			htmlStr += "<h1>" + name + "</h1><h3>" + title + "</h3>"
+			htmlStr += "<h2>" + name + "</h2><h4>" + title + "</h4>"
 			data.user.notification_rules.forEach(function(rule) {
 				if (rule.urgency === "high") {
 					var address = rule.contact_method.address;
