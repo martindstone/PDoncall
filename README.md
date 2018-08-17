@@ -13,4 +13,4 @@ Construct a URL like so:
 https://pagerduty.github.io/addons/PDoncall/index.html?token=<TOKEN>
 ```
 
-Replace <TOKEN> with a read-only v2 API token. That's it! You should now see the service menu populate and information about the first service's escalation policy.
+Replace `<TOKEN>` with a read-only v2 API token. That's it! You should now see the service menu populate and information about the first service's escalation policy.

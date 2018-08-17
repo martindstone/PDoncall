@@ -60,6 +60,9 @@ function populateServiceSelect(offset) {
 			if ( data.more == true ) {
 				populateServiceSelect(data.offset + data.limit);
 			} else {
+				if ( localStorage.getItem("service-select-selected") && $('#service-select option[value="' + localStorage.getItem("service-select-selected") + '"]').length > 0) {
+					$('#service-select').val(localStorage.getItem("service-select-selected"));
+				}
 				populateEPDetails();
 			}
 		}
@@ -73,6 +76,69 @@ function populateServiceSelect(offset) {
 	}
 
 	PDRequest(token, "/services", "GET", options);
+}
+
+function populateUserSelect(offset) {
+	var options = {
+		success: function(data) {
+			data.users.forEach(function (user) {
+				$('#user-select').append($('<option/>', {
+					value: user.id,
+					text: user.name,
+				}));
+			});
+			if ( data.more == true ) {
+				populateUserSelect(data.offset + data.limit);
+			}
+		}
+	}
+	if ( offset ) {
+		options['data'] = {
+			'offset': offset
+		};
+	} else {
+		$('#user-select').html('');
+	}
+
+	PDRequest(token, "/users", "GET", options);
+}
+
+function populateUserDetails() {
+	$('#cal').html('<div id="cal-title"></div><div id="cal-view"></div>');
+	var userName = $('#user-select option:selected').text();
+	var userID = $('#user-select option:selected').val();
+	var events = [];
+
+	var options = {
+		data: {
+			'user_ids[]': userID,
+			'until': moment().add(1, 'months').toISOString()
+		},
+		success: function(data) {
+			data.oncalls.forEach(function(oncall) {
+				console.log(`Start: ${oncall.start}, End: ${oncall.end}, EP: ${oncall.escalation_policy.summary}`);
+				var title = `${oncall.escalation_policy.summary} (Level ${oncall.escalation_level})`;
+				if ( oncall.schedule && oncall.schedule.summary ) {
+					title = `${title} (Schedule ${oncall.schedule.summary})`
+				}
+				events.push({
+					start: oncall.start,
+					end: oncall.end,
+					title: title
+				});
+			});
+			// console.log(data);
+			var headline = `<h2 style="background-color: #f0f0f0">On-calls for ${userName}</h2>`;
+			$('#cal-title').html(headline);
+
+			$('#cal-view').fullCalendar({
+				events: events,
+				defaultView: 'listMonth'
+			});
+		}
+	}
+
+	PDRequest(token, '/oncalls', "GET", options);
 }
 
 function populateEPDetails() {
@@ -191,6 +257,7 @@ function getCalendarFeedURL(calendarID) {
 }
 
 function showCalendar(url) {
+
 	$('#cal').html('<div id="cal-title"></div><div id="cal-view"></div>');
 	$('.busy').show();
 	url = "https://cors-anywhere.herokuapp.com/" + url;
@@ -204,15 +271,15 @@ function showCalendar(url) {
 		},
 		success: function(data) {
 			$('.busy').hide();
+
 			var jcalData = ICAL.parse(data);
 			var comp = new ICAL.Component(jcalData);
-			
 			var calName = comp.getFirstProperty("x-wr-calname").getFirstValue();
-			$('#cal-title').html('<h2>' + calName + '</h2><br>');
-			
 			var vevents = comp.getAllSubcomponents("vevent");
+
 			var events = [];
 			var peopleColors = {};
+
 			vevents.forEach(function(vevent) {
 				var event = new ICAL.Event(vevent);
 				var title = event.summary.replace(/^On Call - /g, '');
@@ -220,14 +287,21 @@ function showCalendar(url) {
 				if ( ! peopleColors[title] ) {
 					peopleColors[title] = colors[Math.floor(Math.random() * colors.length)];
 				}
+
+				var startdate = new Date(event.startDate.toUnixTime() * 1000);
+				var enddate = new Date(event.endDate.toUnixTime() * 1000);
+
 				events.push({
 					title: title,
-					start: (new ICAL.Time(event.startDate)).toString(),
-					end: (new ICAL.Time(event.endDate)).toString(),
+					start: startdate,
+					end: enddate,
 					color: peopleColors[title],
 					weburl: event._firstProp("attendee")
 				});
 			});
+
+			var headline = `<h2 style="background-color: #f0f0f0">${calName}</h2>`;
+			$('#cal-title').html(headline);
 
 			$('#cal-view').fullCalendar({
 				events: events,
@@ -332,10 +406,17 @@ function main() {
 	}
 	
 	$('#service-select').change(function() {
+		localStorage.setItem("service-select-selected", $('#service-select').val());
 		populateEPDetails();
 	});
 
+	$('#user-select').change(function() {
+		populateUserDetails();
+		showUser($('#user-select').val())
+	})
+
 	populateServiceSelect();
+	populateUserSelect();
 	findAnyUser();
 
 }
