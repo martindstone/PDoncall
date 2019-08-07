@@ -67,15 +67,51 @@ function populateServiceSelect(offset) {
 			}
 		}
 	}
+	options.data = {}
+	if ( $('#team-select').val().length > 0 ) {
+		options.data.team_ids = [$('#team-select').val()];
+	}
 	if ( offset ) {
-		options['data'] = {
-			'offset': offset
-		};
+		options.data.offset = offset;
 	} else {
 		$('#service-select').html('');
 	}
 
 	PDRequest(token, "/services", "GET", options);
+}
+
+function populateTeamSelect(offset) {
+	var options = {
+		success: function(data) {
+			data.teams.forEach(function (team) {
+				$('#team-select').append($('<option/>', {
+					value: team.id,
+					text: team.summary
+				}));
+			});
+			if ( data.more == true ) {
+				populateTeamSelect(data.offset + data.limit);
+			} else {
+				if ( localStorage.getItem("team-select-selected") && $('#team-select option[value="' + localStorage.getItem("team-select-selected") + '"]').length > 0) {
+					$('#team-select').val(localStorage.getItem("team-select-selected"));
+				}
+				populateServiceSelect();
+				populateUserSelect();
+			}
+		}
+	}
+	options.data = {};
+	if ( offset ) {
+		options.data.offset = offset;
+	} else {
+		$('#team-select').html('');
+		$('#team-select').append($('<option/>', {
+			value: "",
+			text: "all teams"
+		}));
+	}
+
+	PDRequest(token, "/teams", "GET", options);
 }
 
 function populateUserSelect(offset) {
@@ -92,10 +128,12 @@ function populateUserSelect(offset) {
 			}
 		}
 	}
+	options.data = {};
+	if ( $('#team-select').val().length > 0 ) {
+		options.data.team_ids = [$('#team-select').val()];
+	}
 	if ( offset ) {
-		options['data'] = {
-			'offset': offset
-		};
+		options.data.offset = offset;
 	} else {
 		$('#user-select').html('');
 	}
@@ -143,6 +181,10 @@ function populateUserDetails() {
 
 function populateEPDetails() {
 	$('#ep').html('');
+	var epid = $('#service-select option:selected').attr('epid')
+	if ( epid == undefined || epid == false || epid.length == 0 ) {
+		return;
+	}
 	var serviceName = $('#service-select option:selected').text();
 	var htmlstr = '';
 	var options = {
@@ -231,7 +273,7 @@ function populateEPDetails() {
 		}
 	}
 	
-	PDRequest(token, "/escalation_policies/" + $('#service-select option:selected').attr('epid'), "GET", options);
+	PDRequest(token, "/escalation_policies/" + epid, "GET", options);
 }
 
 function findAnyUser() {
@@ -413,10 +455,15 @@ function main() {
 	$('#user-select').change(function() {
 		populateUserDetails();
 		showUser($('#user-select').val())
-	})
+	});
 
-	populateServiceSelect();
-	populateUserSelect();
+	$('#team-select').change(function() {
+		localStorage.setItem("team-select-selected", $('#team-select').val());
+		populateServiceSelect();
+		populateUserSelect();
+	});
+
+	populateTeamSelect();
 	findAnyUser();
 
 }
